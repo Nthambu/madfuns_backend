@@ -11,11 +11,12 @@ if (process.env.NODE_ENV !== 'production') {
 async function bootstrap() {
   // rawBody: true — required so the webhook controller can verify Paystack HMAC signature
   const app = await NestFactory.create(AppModule, { rawBody: true });
-
+const frontendUrls= process.env.FRONTEND_URL  ?  process.env.FRONTEND_URL.split(',').map((url)=>url.trim()) : ['localhosts://4200']
   app.enableCors({
-    origin: process.env.FRONTEND_URL ?? '*',
+    origin: frontendUrls,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials:true
   });
 
   app.useGlobalPipes(
