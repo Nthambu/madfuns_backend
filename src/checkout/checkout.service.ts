@@ -38,7 +38,7 @@ export class CheckoutService {
 
   /** Flat service fee per ticket in the configured currency */
   private readonly serviceFee = parseFloat(
-    process.env.SERVICE_FEE_PER_TICKET ?? '200',
+    process.env.SERVICE_FEE_PER_TICKET ?? 0,
   );
 
   /** ISO 4217 currency code — KES for Kenya, USD for international */
