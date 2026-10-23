@@ -17,6 +17,8 @@ const mail_module_1 = require("./mail/mail.module");
 const event_entity_1 = require("./events/event.entity");
 const order_entity_1 = require("./orders/order.entity");
 const config_1 = require("@nestjs/config");
+const user_module_1 = require("./user/user.module");
+const user_entity_1 = require("./user/entities/user.entity");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -33,11 +35,9 @@ exports.AppModule = AppModule = __decorate([
                 username: process.env.DB_USER,
                 database: process.env.DB_NAME,
                 password: process.env.DB_PASSWORD,
-                entities: [event_entity_1.Event, order_entity_1.Order],
-                synchronize: process.env.NODE_ENV !== 'production',
-                ssl: process.env.NODE_ENV === 'production'
-                    ? { rejectUnauthorized: false }
-                    : false,
+                entities: [event_entity_1.Event, order_entity_1.Order, user_entity_1.User],
+                autoLoadEntities: true,
+                synchronize: true,
                 logging: process.env.NODE_ENV === 'development',
             }),
             mail_module_1.MailModule,
@@ -45,6 +45,7 @@ exports.AppModule = AppModule = __decorate([
             events_module_1.EventsModule,
             orders_module_1.OrdersModule,
             checkout_module_1.CheckoutModule,
+            user_module_1.UserModule,
         ],
     })
 ], AppModule);
