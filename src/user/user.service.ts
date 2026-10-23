@@ -16,31 +16,31 @@ export class UserService {
   ) {}
 
     async create(createUserDto: CreateUserDto): Promise<User> {
-    // 1. Destructure all needed properties including username
+    // Destructure all needed properties including username
     const { email, username, password, role } = createUserDto;
 
-    // 2. Check if user already exists
+    // Check if user already exists
     const existingUser = await this.repo.findOne({ where: { email } });
     if (existingUser) {
       throw new BadRequestException('Email already registered');
     }
 
-    // 3. Hash the raw password safely
+    // Hash the raw password safely
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
-    // 4. Force type assertion on role using your UserRole Enum to satisfy TypeORM overloads
+    // Force type assertion on role using your UserRole Enum to satisfy TypeORM overloads
     const userRole = (role as UserRole) || UserRole.USER;
 
-    // 5. Build the object structure exactly matching the User Entity
+    //  Build the object structure exactly matching the User Entity
     const newUser = this.repo.create({
       email,
-      username,          // Added to fix the missing property error
+      username,         
       passwordHash,
-      role: userRole,    // Fixed with strict type casting
+      role: userRole,   
     });
 
-    // 6. Save to your PostgreSQL database
+    //  Save to your PostgreSQL database
     const savedUser = await this.repo.save(newUser);
     
     // Clean up sensitive fields from the payload instance before sending back to client
@@ -81,7 +81,7 @@ export class UserService {
     user.otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000); // Valid for 5 minutes
     await this.repo.save(user);
 
-    // FIX: Call the internal helper method
+    // Call the internal helper method
     await this.sendSecureEmail(user.email, otp);
     
     return { 
@@ -90,7 +90,7 @@ export class UserService {
     };
   }
 
-  // FIX: Added missing sendSecureEmail method definition
+  //  Added missing sendSecureEmail method definition
   private async sendSecureEmail(email: string, otp: string): Promise<void> {
     // Replace this console.log with your actual Mailer module/service call later
     console.log(`[MAILER] Sending secure login OTP: ${otp} to admin email: ${email}`);
