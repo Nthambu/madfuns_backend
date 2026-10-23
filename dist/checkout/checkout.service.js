@@ -32,7 +32,7 @@ let CheckoutService = CheckoutService_1 = class CheckoutService {
         this.ordersService = ordersService;
         this.mailService = mailService;
         this.logger = new common_1.Logger(CheckoutService_1.name);
-        this.serviceFee = parseFloat(process.env.SERVICE_FEE_PER_TICKET ?? '200');
+        this.serviceFee = parseFloat(process.env.SERVICE_FEE_PER_TICKET);
         this.currency = process.env.PAYSTACK_CURRENCY ?? 'KES';
         const secretKey = process.env.PAYSTACK_SECRET_KEY;
         if (!secretKey) {

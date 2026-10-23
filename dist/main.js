@@ -10,12 +10,17 @@ if (process.env.NODE_ENV !== 'production') {
 }
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule, { rawBody: true });
-    const frontendUrls = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',').map((url) => url.trim()) : ['localhosts://4200'];
+    const allowedOrigins = [
+        'http://localhost:4200',
+        ...(process.env.FRONTEND_URL
+            ? process.env.FRONTEND_URL.split(',').map((url) => url.trim())
+            : []),
+    ];
     app.enableCors({
-        origin: frontendUrls,
+        origin: allowedOrigins,
         methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization'],
-        credentials: true
+        allowedHeaders: ['Content-Type', 'Authorization', 'x-paystack-signature'],
+        credentials: true,
     });
     app.useGlobalPipes(new common_1.ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
     const config = new swagger_1.DocumentBuilder()
