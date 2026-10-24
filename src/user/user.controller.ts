@@ -3,6 +3,7 @@ import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
 
 @Controller('user')
 export class UserController {
@@ -15,6 +16,10 @@ export class UserController {
   @Post('login')
   login(@Body() dto: LoginUserDto) {
     return this.userService.verifyCredentialsAndSendOtp(dto.email, dto.password);
+  }
+  @Post('verify')
+  verifyOtp(@Body() otpDto: VerifyOtpDto) {
+    return this.userService.verifyAdminOtp(otpDto.email, otpDto.otp);
   }
   @Get()
   findAll() {

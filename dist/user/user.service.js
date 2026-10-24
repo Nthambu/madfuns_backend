@@ -18,12 +18,14 @@ const typeorm_1 = require("typeorm");
 const user_entity_1 = require("./entities/user.entity");
 const typeorm_2 = require("@nestjs/typeorm");
 const jwt_1 = require("@nestjs/jwt");
+const mail_service_1 = require("../mail/mail.service");
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 let UserService = class UserService {
-    constructor(repo, jwtService) {
+    constructor(repo, jwtService, mailService) {
         this.repo = repo;
         this.jwtService = jwtService;
+        this.mailService = mailService;
     }
     async create(createUserDto) {
         const { email, username, password, role } = createUserDto;
@@ -34,24 +36,21 @@ let UserService = class UserService {
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(password, salt);
         const userRole = role || user_entity_1.UserRole.USER;
-        const newUser = this.repo.create({
-            email,
-            username,
-            passwordHash,
-            role: userRole,
-        });
+        const newUser = this.repo.create({ email, username, passwordHash, role: userRole });
         const savedUser = await this.repo.save(newUser);
         delete savedUser.passwordHash;
+        delete savedUser.otpHash;
+        delete savedUser.otpExpiresAt;
         return savedUser;
     }
     findAll() {
-        return `This action returns all user`;
+        return `This action returns all users`;
     }
     async verifyCredentialsAndSendOtp(email, password) {
         if (!email || !password) {
             throw new common_1.BadRequestException('Email and password are required');
         }
-        const user = await this.repo.findOne({ where: { email: email } });
+        const user = await this.repo.findOne({ where: { email } });
         if (!user) {
             throw new common_1.UnauthorizedException('Invalid email or password');
         }
@@ -67,14 +66,14 @@ let UserService = class UserService {
         user.otpHash = await bcrypt.hash(otp, salt);
         user.otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
         await this.repo.save(user);
-        await this.sendSecureEmail(user.email, otp);
+        await this.sendOtpEmail(user.email, otp);
         return {
             message: 'Password accepted. Please provide the OTP sent to your registered email.',
-            step2Required: true
+            step2Required: true,
         };
     }
-    async sendSecureEmail(email, otp) {
-        console.log(`[MAILER] Sending secure login OTP: ${otp} to admin email: ${email}`);
+    async sendOtpEmail(to, otp) {
+        await this.mailService.sendOtpEmail(to, otp);
     }
     async verifyAdminOtp(email, otp) {
         const user = await this.repo.findOne({ where: { email } });
@@ -93,7 +92,7 @@ let UserService = class UserService {
         await this.repo.save(user);
         const payload = { sub: user.id, email: user.email, role: user.role };
         return {
-            accessToken: this.jwtService.sign(payload),
+            accessToken: this.jwtService.sign(payload, { expiresIn: '1h' }),
         };
     }
     findOne(id) {
@@ -111,6 +110,7 @@ exports.UserService = UserService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_2.InjectRepository)(user_entity_1.User)),
     __metadata("design:paramtypes", [typeorm_1.Repository,
-        jwt_1.JwtService])
+        jwt_1.JwtService,
+        mail_service_1.MailService])
 ], UserService);
 //# sourceMappingURL=user.service.js.map

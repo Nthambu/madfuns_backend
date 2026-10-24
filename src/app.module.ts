@@ -10,8 +10,21 @@ import { Order }  from './orders/order.entity';
 import { ConfigModule } from '@nestjs/config';
 import { UserModule } from './user/user.module';
 import { User } from './user/entities/user.entity';
+import { MailerModule } from '@nestjs-modules/mailer';
 @Module({
   imports: [
+    MailerModule.forRoot({
+      transport: {
+        host: process.env.SMTP_HOST || 'smtp.mailtrap.io',
+        port: Number(process.env.SMTP_PORT) || 2525,
+        auth: {
+          user: process.env.SMTP_USER || 'your_username',
+          pass: process.env.SMTP_PASS || 'your_password',
+        },
+      },
+      defaults: {
+        from: '"No Reply" <no-reply@ticko.com>',
+      },}),
     ConfigModule.forRoot({
 isGlobal:true
     }),

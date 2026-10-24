@@ -2,6 +2,7 @@ import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
 export declare class UserController {
     private readonly userService;
     constructor(userService: UserService);
@@ -9,6 +10,9 @@ export declare class UserController {
     login(dto: LoginUserDto): Promise<{
         message: string;
         step2Required: boolean;
+    }>;
+    verifyOtp(otpDto: VerifyOtpDto): Promise<{
+        accessToken: string;
     }>;
     findAll(): string;
     findOne(id: string): string;

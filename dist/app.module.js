@@ -19,12 +19,26 @@ const order_entity_1 = require("./orders/order.entity");
 const config_1 = require("@nestjs/config");
 const user_module_1 = require("./user/user.module");
 const user_entity_1 = require("./user/entities/user.entity");
+const mailer_1 = require("@nestjs-modules/mailer");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
+            mailer_1.MailerModule.forRoot({
+                transport: {
+                    host: process.env.SMTP_HOST || 'smtp.mailtrap.io',
+                    port: Number(process.env.SMTP_PORT) || 2525,
+                    auth: {
+                        user: process.env.SMTP_USER || 'your_username',
+                        pass: process.env.SMTP_PASS || 'your_password',
+                    },
+                },
+                defaults: {
+                    from: '"No Reply" <no-reply@ticko.com>',
+                },
+            }),
             config_1.ConfigModule.forRoot({
                 isGlobal: true
             }),

@@ -26,6 +26,35 @@ let MailService = MailService_1 = class MailService {
             },
         });
     }
+    async sendOtpEmail(to, otp) {
+        if (!process.env.MAIL_USER) {
+            this.logger.warn('MAIL_USER not set — skipping OTP email');
+            return;
+        }
+        try {
+            await this.transporter.sendMail({
+                from: process.env.MAIL_FROM ?? process.env.MAIL_USER,
+                to,
+                subject: 'Your admin login OTP',
+                text: `Your one-time login code is: ${otp}\n\nThis code expires in 5 minutes. Do not share it with anyone.`,
+                html: `
+          <div style="font-family:Arial,sans-serif;max-width:400px;margin:0 auto;padding:32px;background:#f9f9f9;border-radius:8px;">
+            <h2 style="color:#1a56db;margin-top:0;">Admin Login Code</h2>
+            <p style="color:#444;">Use the code below to complete your sign-in:</p>
+            <div style="font-size:36px;font-weight:700;letter-spacing:8px;color:#111;text-align:center;padding:16px;background:#fff;border-radius:6px;border:1px solid #ddd;">
+              ${otp}
+            </div>
+            <p style="color:#888;font-size:12px;margin-top:16px;">This code expires in <strong>5 minutes</strong>. Do not share it with anyone.</p>
+          </div>
+        `,
+            });
+            this.logger.log(`OTP email sent to ${to}`);
+        }
+        catch (err) {
+            this.logger.error(`Failed to send OTP email to ${to}: ${err.message}`);
+            throw err;
+        }
+    }
     async sendOrderConfirmation(order) {
         if (!process.env.MAIL_USER) {
             this.logger.warn('MAIL_USER not set — skipping confirmation email');
