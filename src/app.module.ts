@@ -10,39 +10,19 @@ import { Order }  from './orders/order.entity';
 import { ConfigModule } from '@nestjs/config';
 import { UserModule } from './user/user.module';
 import { User } from './user/entities/user.entity';
-import { MailerModule } from '@nestjs-modules/mailer';
+
 @Module({
   imports: [
-    MailerModule.forRoot({
-      transport: {
-        host: process.env.SMTP_HOST || 'smtp.mailtrap.io',
-        port: Number(process.env.SMTP_PORT) || 2525,
-        auth: {
-          user: process.env.SMTP_USER || 'your_username',
-          pass: process.env.SMTP_PASS || 'your_password',
-        },
-      },
-      defaults: {
-        from: '"No Reply" <no-reply@ticko.com>',
-      },}),
-    ConfigModule.forRoot({
-isGlobal:true
-    }),
+    ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot({
-      type:        'postgres',
-       host:process.env.DB_HOST,
-port:Number(process.env.DB_PORT),
- username:process.env.DB_USER,
-database:process.env.DB_NAME,
-password:process.env.DB_PASSWORD,
-      entities:    [Event, Order,User],
-      // synchronize: process.env.NODE_ENV !== 'production',
-      //     ssl: process.env.NODE_ENV === 'production' 
-      //   ? { rejectUnauthorized: false } 
-      //   : false, 
-      // Better setup for early staging/testing:
-autoLoadEntities: true,
-synchronize: true, // Switch back to 'process.env.NODE_ENV !== "production"' once live traffic begins
+      type:     'postgres',
+      host:     process.env.DB_HOST,
+      port:     Number(process.env.DB_PORT),
+      username: process.env.DB_USER,
+      database: process.env.DB_NAME,
+      password: process.env.DB_PASSWORD,
+      autoLoadEntities: true,
+      synchronize: true,
       logging: process.env.NODE_ENV === 'development',
     }),
     MailModule,
