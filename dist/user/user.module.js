@@ -22,7 +22,7 @@ exports.UserModule = UserModule = __decorate([
             typeorm_1.TypeOrmModule.forFeature([user_entity_1.User]),
             jwt_1.JwtModule.register({
                 secret: process.env.JWT_SECRET ?? 'fallback-secret-change-me',
-                signOptions: { expiresIn: '30m' },
+                signOptions: { expiresIn: '2h' },
             }),
         ],
         controllers: [user_controller_1.UserController],
