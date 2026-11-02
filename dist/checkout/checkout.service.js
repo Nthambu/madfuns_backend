@@ -32,7 +32,7 @@ let CheckoutService = CheckoutService_1 = class CheckoutService {
         this.ordersService = ordersService;
         this.mailService = mailService;
         this.logger = new common_1.Logger(CheckoutService_1.name);
-        this.serviceFee = parseFloat(process.env.SERVICE_FEE_PER_TICKET);
+        this.serviceFee = parseFloat(process.env.SERVICE_FEE_PER_TICKET ?? '0');
         this.currency = process.env.PAYSTACK_CURRENCY ?? 'KES';
         const secretKey = process.env.PAYSTACK_SECRET_KEY;
         if (!secretKey) {
@@ -146,7 +146,14 @@ let CheckoutService = CheckoutService_1 = class CheckoutService {
             status: 'paid',
         });
         this.logger.log(`Order saved: ${order.order_number} | ref=${dto.reference} | ${totalPaid} ${txn.currency}`);
-        this.mailService.sendOrderConfirmation(order).catch(err => this.logger.error(`Email failed for ${order.order_number}: ${err.message}`));
+        const orderWithEvent = await this.ordersService.findOne(order.id);
+        try {
+            await this.mailService.sendOrderConfirmation(orderWithEvent);
+            this.logger.log(`Confirmation email dispatched for ${order.order_number}`);
+        }
+        catch (err) {
+            this.logger.error(`Confirmation email FAILED for ${order.order_number}: ${err.message}`, err.stack);
+        }
         return { orderId: order.id, orderNumber: order.order_number };
     }
     async handleWebhook(rawBody, signature, payload) {

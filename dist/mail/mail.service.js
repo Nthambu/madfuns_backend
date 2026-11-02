@@ -25,6 +25,11 @@ let MailService = MailService_1 = class MailService {
                 pass: process.env.MAIL_PASS,
             },
         });
+        if (process.env.MAIL_USER) {
+            this.transporter.verify()
+                .then(() => this.logger.log('SMTP connection verified — mail is ready'))
+                .catch(err => this.logger.error(`SMTP connection FAILED: ${err.message}`));
+        }
     }
     async sendOtpEmail(to, otp) {
         if (!process.env.MAIL_USER) {
@@ -73,6 +78,7 @@ let MailService = MailService_1 = class MailService {
         }
         catch (err) {
             this.logger.error(`Failed to send email to ${order.customer_email}: ${err.message}`);
+            throw err;
         }
     }
     buildTicketHtml(order) {

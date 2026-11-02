@@ -11,12 +11,19 @@ export class MailService {
     this.transporter = nodemailer.createTransport({
       host: process.env.MAIL_HOST ?? 'smtp.gmail.com',
       port: parseInt(process.env.MAIL_PORT ?? '587'),
-      secure: process.env.MAIL_SECURE === 'true',   // true for port 465
+      secure: process.env.MAIL_SECURE === 'true',
       auth: {
         user: process.env.MAIL_USER,
         pass: process.env.MAIL_PASS,
       },
     });
+
+    // Verify SMTP connection at startup so misconfiguration is caught early
+    if (process.env.MAIL_USER) {
+      this.transporter.verify()
+        .then(() => this.logger.log('SMTP connection verified — mail is ready'))
+        .catch(err => this.logger.error(`SMTP connection FAILED: ${err.message}`));
+    }
   }
 
   // ── OTP email for admin login ──────────────────────────────────────────
@@ -71,8 +78,9 @@ export class MailService {
       });
       this.logger.log(`Confirmation email sent to ${order.customer_email} — ${order.order_number}`);
     } catch (err) {
-      // Never crash the request over email — just log
+      // Log and re-throw so the caller can see the failure
       this.logger.error(`Failed to send email to ${order.customer_email}: ${err.message}`);
+      throw err;
     }
   }
 

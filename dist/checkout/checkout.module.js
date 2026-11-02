@@ -12,12 +12,13 @@ const checkout_controller_1 = require("./checkout.controller");
 const checkout_service_1 = require("./checkout.service");
 const events_module_1 = require("../events/events.module");
 const orders_module_1 = require("../orders/orders.module");
+const mail_module_1 = require("../mail/mail.module");
 let CheckoutModule = class CheckoutModule {
 };
 exports.CheckoutModule = CheckoutModule;
 exports.CheckoutModule = CheckoutModule = __decorate([
     (0, common_1.Module)({
-        imports: [events_module_1.EventsModule, orders_module_1.OrdersModule],
+        imports: [events_module_1.EventsModule, orders_module_1.OrdersModule, mail_module_1.MailModule],
         controllers: [checkout_controller_1.CheckoutController],
         providers: [checkout_service_1.CheckoutService],
     })

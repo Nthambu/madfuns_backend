@@ -3,9 +3,10 @@ import { CheckoutController } from './checkout.controller';
 import { CheckoutService }    from './checkout.service';
 import { EventsModule }       from '../events/events.module';
 import { OrdersModule }       from '../orders/orders.module';
+import { MailModule }         from '../mail/mail.module';
 
 @Module({
-  imports:     [EventsModule, OrdersModule],
+  imports:     [EventsModule, OrdersModule, MailModule],
   controllers: [CheckoutController],
   providers:   [CheckoutService],
 })

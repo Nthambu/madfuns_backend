@@ -38,7 +38,7 @@ export class CheckoutService {
 
   /** Flat service fee per ticket in the configured currency */
   private readonly serviceFee = parseFloat(
-    process.env.SERVICE_FEE_PER_TICKET
+    process.env.SERVICE_FEE_PER_TICKET ?? '0',
   );
 
   /** ISO 4217 currency code — KES for Kenya, USD for international */
@@ -209,10 +209,16 @@ export class CheckoutService {
       `Order saved: ${order.order_number} | ref=${dto.reference} | ${totalPaid} ${txn.currency}`,
     );
 
-    // Send confirmation email (non-blocking — never fails the request)
-    this.mailService.sendOrderConfirmation(order).catch(err =>
-      this.logger.error(`Email failed for ${order.order_number}: ${err.message}`),
-    );
+    // Reload order with event relation so the email template has full event details
+    const orderWithEvent = await this.ordersService.findOne(order.id);
+
+    // Send confirmation email — awaited so failures are visible in logs
+    try {
+      await this.mailService.sendOrderConfirmation(orderWithEvent);
+      this.logger.log(`Confirmation email dispatched for ${order.order_number}`);
+    } catch (err) {
+      this.logger.error(`Confirmation email FAILED for ${order.order_number}: ${err.message}`, err.stack);
+    }
 
     return { orderId: order.id, orderNumber: order.order_number };
   }
