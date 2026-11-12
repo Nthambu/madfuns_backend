@@ -5,11 +5,8 @@ import { EventsModule }   from './events/events.module';
 import { OrdersModule }   from './orders/orders.module';
 import { CheckoutModule } from './checkout/checkout.module';
 import { MailModule }     from './mail/mail.module';
-import { Event }  from './events/event.entity';
-import { Order }  from './orders/order.entity';
 import { ConfigModule } from '@nestjs/config';
 import { UserModule } from './user/user.module';
-import { User } from './user/entities/user.entity';
 
 @Module({
   imports: [

@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
+import * as QRCode from 'qrcode';
 import { Order } from '../orders/order.entity';
 
 @Injectable()
@@ -30,7 +31,7 @@ export class MailService {
 
   async sendOtpEmail(to: string, otp: string): Promise<void> {
     if (!process.env.MAIL_USER) {
-      this.logger.warn('MAIL_USER not set — skipping OTP email');
+      // this.logger.warn('MAIL_USER not set — skipping OTP email');
       return;
     }
 
@@ -51,9 +52,9 @@ export class MailService {
           </div>
         `,
       });
-      this.logger.log(`OTP email sent to ${to}`);
+      // this.logger.log(`OTP email sent to ${to}`);
     } catch (err) {
-      this.logger.error(`Failed to send OTP email to ${to}: ${err.message}`);
+      // this.logger.error(`Failed to send OTP email to ${to}: ${err.message}`);
       throw err; // re-throw so the login flow knows it failed
     }
   }
@@ -62,11 +63,18 @@ export class MailService {
 
   async sendOrderConfirmation(order: Order): Promise<void> {
     if (!process.env.MAIL_USER) {
-      this.logger.warn('MAIL_USER not set — skipping confirmation email');
+      // this.logger.warn('MAIL_USER not set — skipping confirmation email');
       return;
     }
 
     const subject = `Your tickets for ${order.event?.name ?? 'the event'} — ${order.order_number}`;
+
+    // Generate QR code as base64 data URL — encodes the order number
+    const qrDataUrl = await QRCode.toDataURL(order.order_number, {
+      width: 160,
+      margin: 1,
+      color: { dark: '#1a56db', light: '#f0f4ff' },
+    });
 
     try {
       await this.transporter.sendMail({
@@ -74,12 +82,12 @@ export class MailService {
         to:      order.customer_email,
         subject,
         html:    this.buildTicketHtml(order),
+        // html:    this.buildTicketHtml(order, qrDataUrl),
         text:    this.buildTicketText(order),
       });
-      this.logger.log(`Confirmation email sent to ${order.customer_email} — ${order.order_number}`);
+      // this.logger.log(`Confirmation email sent to ${order.customer_email} — ${order.order_number}`);
     } catch (err) {
-      // Log and re-throw so the caller can see the failure
-      this.logger.error(`Failed to send email to ${order.customer_email}: ${err.message}`);
+      // this.logger.error(`Failed to send email to ${order.customer_email}: ${err.message}`);
       throw err;
     }
   }
@@ -187,12 +195,20 @@ export class MailService {
               style="border:2px dashed #1a56db;border-radius:8px;overflow:hidden;">
               <tr>
                 <td style="background:#f0f4ff;padding:20px 24px;">
-                  <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#4b6cb7;margin-bottom:6px;">Your ticket</div>
-                  <div style="font-size:16px;font-weight:700;color:#1a1a1a;">${eventName}</div>
-                  <div style="font-size:13px;color:#555;margin-top:4px;">${order.ticket_type_name} · ${order.quantity} ticket${order.quantity > 1 ? 's' : ''}</div>
-                  <div style="font-size:13px;color:#555;margin-top:2px;">${eventDate}</div>
-                  <div style="margin-top:12px;font-family:monospace;font-size:13px;letter-spacing:3px;color:#1a56db;font-weight:700;">${order.order_number}</div>
-                  <div style="font-size:11px;color:#888;margin-top:4px;">Present this email or order number at the venue</div>
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <!-- Left: ticket details -->
+                      <td style="vertical-align:top;padding-right:16px;">
+                        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#4b6cb7;margin-bottom:6px;">Your ticket</div>
+                        <div style="font-size:16px;font-weight:700;color:#1a1a1a;">${eventName}</div>
+                        <div style="font-size:13px;color:#555;margin-top:4px;">${order.ticket_type_name} · ${order.quantity} ticket${order.quantity > 1 ? 's' : ''}</div>
+                        <div style="font-size:13px;color:#555;margin-top:2px;">${eventDate}</div>
+                        <div style="margin-top:12px;font-family:monospace;font-size:13px;letter-spacing:3px;color:#1a56db;font-weight:700;">${order.order_number}</div>
+                        <div style="font-size:11px;color:#888;margin-top:4px;">Present this QR code at the venue</div>
+                      </td>
+                     
+                    </tr>
+                  </table>
                 </td>
               </tr>
             </table>
@@ -233,7 +249,12 @@ export class MailService {
 </body>
 </html>`;
   }
-
+  // Right: QR code 
+  //                     <td style="vertical-align:middle;text-align:center;width:120px;">
+  //                       <img src="${qrDataUrl}" width="120" height="120" alt="Ticket QR Code"
+  //                         style="display:block;border-radius:6px;border:2px solid #1a56db;" />
+  //                       <div style="font-size:10px;color:#888;margin-top:4px;">Scan at entry</div>
+  //                     </td>
   // ── Plain-text fallback ────────────────────────────────────────────────
 
   private buildTicketText(order: Order): string {
