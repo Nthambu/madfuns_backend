@@ -149,7 +149,21 @@ export class CheckoutService {
     // Idempotency — never create duplicate orders for the same reference
     const existing = await this.ordersService.findByReference(dto.reference);
     if (existing) {
-      this.logger.log(`Order already exists for ref=${dto.reference} — returning existing`);
+      this.logger.log(`Order already exists for ref=${dto.reference}`);
+
+      // If order was created in the last 2 minutes, the webhook likely beat the frontend
+      // verify call — send the confirmation email now since the webhook path skips it
+      const ageMs = Date.now() - new Date(existing.created_at).getTime();
+      if (ageMs < 2 * 60 * 1000) {
+        const orderWithEvent = await this.ordersService.findOne(existing.id);
+        try {
+          await this.mailService.sendOrderConfirmation(orderWithEvent);
+          this.logger.log(`Confirmation email dispatched for ${existing.order_number} (webhook-first scenario)`);
+        } catch (err) {
+          this.logger.error(`Confirmation email FAILED for ${existing.order_number}: ${err.message}`, err.stack);
+        }
+      }
+
       return { orderId: existing.id, orderNumber: existing.order_number, alreadyProcessed: true };
     }
 
@@ -158,6 +172,7 @@ export class CheckoutService {
     try {
       const { data } = await this.http.get(`/transaction/verify/${dto.reference}`);
       txn = data.data;
+      
     } catch (err) {
       const message = err.response?.data?.message ?? err.message;
       throw new BadRequestException(`Could not verify payment: ${message}`);
@@ -168,7 +183,7 @@ export class CheckoutService {
         `Payment not completed — Paystack status: "${txn.status}"`,
       );
     }
-
+console.log('payment verified')
     // Extract metadata (stored during initialization)
     const meta = txn.metadata as {
       eventId:         string;
@@ -214,6 +229,7 @@ export class CheckoutService {
 
     // Send confirmation email — awaited so failures are visible in logs
     try {
+      console.log('preparing to send an email')
       await this.mailService.sendOrderConfirmation(orderWithEvent);
       this.logger.log(`Confirmation email dispatched for ${order.order_number}`);
     } catch (err) {
