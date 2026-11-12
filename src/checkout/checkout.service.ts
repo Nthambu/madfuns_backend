@@ -183,7 +183,6 @@ export class CheckoutService {
         `Payment not completed — Paystack status: "${txn.status}"`,
       );
     }
-console.log('payment verified')
     // Extract metadata (stored during initialization)
     const meta = txn.metadata as {
       eventId:         string;
@@ -229,11 +228,10 @@ console.log('payment verified')
 
     // Send confirmation email — awaited so failures are visible in logs
     try {
-      console.log('preparing to send an email')
       await this.mailService.sendOrderConfirmation(orderWithEvent);
       this.logger.log(`Confirmation email dispatched for ${order.order_number}`);
     } catch (err) {
-      this.logger.error(`Confirmation email FAILED for ${order.order_number}: ${err.message}`, err.stack);
+     this.logger.error(`Confirmation email FAILED for ${order.order_number}: ${err.message}`, err.stack);
     }
 
     return { orderId: order.id, orderNumber: order.order_number };

@@ -13,6 +13,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MailService = void 0;
 const common_1 = require("@nestjs/common");
 const nodemailer = require("nodemailer");
+const QRCode = require("qrcode");
 let MailService = MailService_1 = class MailService {
     constructor() {
         this.logger = new common_1.Logger(MailService_1.name);
@@ -33,7 +34,6 @@ let MailService = MailService_1 = class MailService {
     }
     async sendOtpEmail(to, otp) {
         if (!process.env.MAIL_USER) {
-            this.logger.warn('MAIL_USER not set — skipping OTP email');
             return;
         }
         try {
@@ -53,19 +53,21 @@ let MailService = MailService_1 = class MailService {
           </div>
         `,
             });
-            this.logger.log(`OTP email sent to ${to}`);
         }
         catch (err) {
-            this.logger.error(`Failed to send OTP email to ${to}: ${err.message}`);
             throw err;
         }
     }
     async sendOrderConfirmation(order) {
         if (!process.env.MAIL_USER) {
-            this.logger.warn('MAIL_USER not set — skipping confirmation email');
             return;
         }
         const subject = `Your tickets for ${order.event?.name ?? 'the event'} — ${order.order_number}`;
+        const qrDataUrl = await QRCode.toDataURL(order.order_number, {
+            width: 160,
+            margin: 1,
+            color: { dark: '#1a56db', light: '#f0f4ff' },
+        });
         try {
             await this.transporter.sendMail({
                 from: process.env.MAIL_FROM ?? process.env.MAIL_USER,
@@ -74,10 +76,8 @@ let MailService = MailService_1 = class MailService {
                 html: this.buildTicketHtml(order),
                 text: this.buildTicketText(order),
             });
-            this.logger.log(`Confirmation email sent to ${order.customer_email} — ${order.order_number}`);
         }
         catch (err) {
-            this.logger.error(`Failed to send email to ${order.customer_email}: ${err.message}`);
             throw err;
         }
     }
@@ -181,12 +181,20 @@ let MailService = MailService_1 = class MailService {
               style="border:2px dashed #1a56db;border-radius:8px;overflow:hidden;">
               <tr>
                 <td style="background:#f0f4ff;padding:20px 24px;">
-                  <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#4b6cb7;margin-bottom:6px;">Your ticket</div>
-                  <div style="font-size:16px;font-weight:700;color:#1a1a1a;">${eventName}</div>
-                  <div style="font-size:13px;color:#555;margin-top:4px;">${order.ticket_type_name} · ${order.quantity} ticket${order.quantity > 1 ? 's' : ''}</div>
-                  <div style="font-size:13px;color:#555;margin-top:2px;">${eventDate}</div>
-                  <div style="margin-top:12px;font-family:monospace;font-size:13px;letter-spacing:3px;color:#1a56db;font-weight:700;">${order.order_number}</div>
-                  <div style="font-size:11px;color:#888;margin-top:4px;">Present this email or order number at the venue</div>
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <!-- Left: ticket details -->
+                      <td style="vertical-align:top;padding-right:16px;">
+                        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#4b6cb7;margin-bottom:6px;">Your ticket</div>
+                        <div style="font-size:16px;font-weight:700;color:#1a1a1a;">${eventName}</div>
+                        <div style="font-size:13px;color:#555;margin-top:4px;">${order.ticket_type_name} · ${order.quantity} ticket${order.quantity > 1 ? 's' : ''}</div>
+                        <div style="font-size:13px;color:#555;margin-top:2px;">${eventDate}</div>
+                        <div style="margin-top:12px;font-family:monospace;font-size:13px;letter-spacing:3px;color:#1a56db;font-weight:700;">${order.order_number}</div>
+                        <div style="font-size:11px;color:#888;margin-top:4px;">Present this QR code at the venue</div>
+                      </td>
+                     
+                    </tr>
+                  </table>
                 </td>
               </tr>
             </table>
