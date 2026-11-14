@@ -146,6 +146,7 @@ export class CheckoutService {
   // ── Step 2: Verify payment and save order ────────────────────────────────
 
   async verifyAndSaveOrder(dto: VerifyPaymentDto) {
+    this.logger.log('','verifyAndSave was called')
     // Idempotency — never create duplicate orders for the same reference
     const existing = await this.ordersService.findByReference(dto.reference);
     if (existing) {
@@ -155,13 +156,13 @@ export class CheckoutService {
       // verify call — send the confirmation email now since the webhook path skips it
       const ageMs = Date.now() - new Date(existing.created_at).getTime();
       if (ageMs < 2 * 60 * 1000) {
-        const orderWithEvent = await this.ordersService.findOne(existing.id);
-        try {
-          await this.mailService.sendOrderConfirmation(orderWithEvent);
-          this.logger.log(`Confirmation email dispatched for ${existing.order_number} (webhook-first scenario)`);
-        } catch (err) {
-          this.logger.error(`Confirmation email FAILED for ${existing.order_number}: ${err.message}`, err.stack);
-        }
+        // const orderWithEvent = await this.ordersService.findOne(existing.id);
+        // try {
+        //   await this.mailService.sendOrderConfirmation(orderWithEvent);
+        //   this.logger.log(`Confirmation email dispatched for ${existing.order_number} (webhook-first scenario)`);
+        // } catch (err) {
+        //   this.logger.error(`Confirmation email FAILED for ${existing.order_number}: ${err.message}`, err.stack);
+        // }
       }
 
       return { orderId: existing.id, orderNumber: existing.order_number, alreadyProcessed: true };
@@ -172,6 +173,9 @@ export class CheckoutService {
     try {
       const { data } = await this.http.get(`/transaction/verify/${dto.reference}`);
       txn = data.data;
+         const orderWithEvent = await this.ordersService.findOne(existing.id);
+        await this.mailService.sendOrderConfirmation(orderWithEvent);
+          this.logger.log(`Confirmation email dispatched for ${existing.order_number} (webhook-first scenario)`);
       
     } catch (err) {
       const message = err.response?.data?.message ?? err.message;

@@ -63,12 +63,12 @@ export class MailService {
 
   async sendOrderConfirmation(order: Order): Promise<void> {
     if (!process.env.MAIL_USER) {
-      // this.logger.warn('MAIL_USER not set — skipping confirmation email');
+      this.logger.warn('MAIL_USER not set — skipping confirmation email');
       return;
     }
 
     const subject = `Your tickets for ${order.event?.name ?? 'the event'} — ${order.order_number}`;
-
+this.logger.log('','email function called');
     // Generate QR code as base64 data URL — encodes the order number
     const qrDataUrl = await QRCode.toDataURL(order.order_number, {
       width: 160,
@@ -85,9 +85,9 @@ export class MailService {
         // html:    this.buildTicketHtml(order, qrDataUrl),
         text:    this.buildTicketText(order),
       });
-      // this.logger.log(`Confirmation email sent to ${order.customer_email} — ${order.order_number}`);
+       this.logger.log(`Confirmation email sent to ${order.customer_email} — ${order.order_number}`);
     } catch (err) {
-      // this.logger.error(`Failed to send email to ${order.customer_email}: ${err.message}`);
+       this.logger.error(`Failed to send email to ${order.customer_email}: ${err.message}`);
       throw err;
     }
   }
