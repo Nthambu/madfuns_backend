@@ -66,7 +66,7 @@ let CheckoutService = CheckoutService_1 = class CheckoutService {
                 amount: amountInMinorUnits,
                 reference,
                 currency: this.currency,
-                callback_url: `${process.env.FRONTEND_URL ?? 'http://localhost:4200'}/success?ref=${reference}`,
+                callback_url: `${process.env.FRONTEND_URL}/success`,
                 metadata: {
                     custom_fields: [
                         { display_name: 'Customer Name', variable_name: 'customerName', value: dto.customerName },
