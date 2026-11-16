@@ -98,7 +98,8 @@ export class CheckoutService {
         amount:       amountInMinorUnits,
         reference,
         currency:     this.currency,
-        callback_url: `${process.env.FRONTEND_URL}/success?ref=${reference}`,
+                callback_url: `${process.env.FRONTEND_URL}/success`,
+        // callback_url: `${process.env.FRONTEND_URL}/success?ref=${reference}`,
         metadata: {
           custom_fields: [
             { display_name: 'Customer Name',  variable_name: 'customerName',  value: dto.customerName },
