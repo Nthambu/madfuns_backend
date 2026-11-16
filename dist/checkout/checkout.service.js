@@ -66,7 +66,7 @@ let CheckoutService = CheckoutService_1 = class CheckoutService {
                 amount: amountInMinorUnits,
                 reference,
                 currency: this.currency,
-                callback_url: `${process.env.FRONTEND_URL}/success`,
+                callback_url: `${process.env.FRONTEND_URL}/success?ref=${reference}`,
                 metadata: {
                     custom_fields: [
                         { display_name: 'Customer Name', variable_name: 'customerName', value: dto.customerName },
@@ -112,6 +112,14 @@ let CheckoutService = CheckoutService_1 = class CheckoutService {
             this.logger.log(`Order already exists for ref=${dto.reference}`);
             const ageMs = Date.now() - new Date(existing.created_at).getTime();
             if (ageMs < 2 * 60 * 1000) {
+                const orderWithEvent = await this.ordersService.findOne(existing.id);
+                try {
+                    await this.mailService.sendOrderConfirmation(orderWithEvent);
+                    this.logger.log(`Confirmation email dispatched for ${existing.order_number} (webhook-first scenario)`);
+                }
+                catch (err) {
+                    this.logger.error(`Confirmation email FAILED for ${existing.order_number}: ${err.message}`, err.stack);
+                }
             }
             return { orderId: existing.id, orderNumber: existing.order_number, alreadyProcessed: true };
         }
@@ -119,9 +127,6 @@ let CheckoutService = CheckoutService_1 = class CheckoutService {
         try {
             const { data } = await this.http.get(`/transaction/verify/${dto.reference}`);
             txn = data.data;
-            const orderWithEvent = await this.ordersService.findOne(existing.id);
-            await this.mailService.sendOrderConfirmation(orderWithEvent);
-            this.logger.log(`Confirmation email dispatched for ${existing.order_number} (webhook-first scenario)`);
         }
         catch (err) {
             const message = err.response?.data?.message ?? err.message;
