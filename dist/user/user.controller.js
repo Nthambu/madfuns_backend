@@ -19,6 +19,7 @@ const create_user_dto_1 = require("./dto/create-user.dto");
 const update_user_dto_1 = require("./dto/update-user.dto");
 const login_user_dto_1 = require("./dto/login-user.dto");
 const verify_otp_dto_1 = require("./dto/verify-otp.dto");
+const update_password_dto_1 = require("./dto/update-password.dto");
 let UserController = class UserController {
     constructor(userService) {
         this.userService = userService;
@@ -31,6 +32,12 @@ let UserController = class UserController {
     }
     verifyOtp(otpDto) {
         return this.userService.verifyAdminOtp(otpDto.email, otpDto.otp);
+    }
+    verifyEmail(email) {
+        return this.userService.verifyAdminEmail(email);
+    }
+    updateAdminPassword(updatePasswordDto) {
+        return this.userService.verifyOtpAndPassword(updatePasswordDto);
     }
     findAll() {
         return this.userService.findAll();
@@ -67,6 +74,20 @@ __decorate([
     __metadata("design:paramtypes", [verify_otp_dto_1.VerifyOtpDto]),
     __metadata("design:returntype", void 0)
 ], UserController.prototype, "verifyOtp", null);
+__decorate([
+    (0, common_1.Post)('verify/email'),
+    __param(0, (0, common_1.Body)('email')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], UserController.prototype, "verifyEmail", null);
+__decorate([
+    (0, common_1.Post)('update-password'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [update_password_dto_1.UpdatePasswordDto]),
+    __metadata("design:returntype", void 0)
+], UserController.prototype, "updateAdminPassword", null);
 __decorate([
     (0, common_1.Get)(),
     __metadata("design:type", Function),

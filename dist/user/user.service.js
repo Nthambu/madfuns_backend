@@ -95,6 +95,37 @@ let UserService = class UserService {
             accessToken: this.jwtService.sign(payload, { expiresIn: '1h' }),
         };
     }
+    async verifyAdminEmail(email) {
+        if (!email) {
+            throw new common_1.BadRequestException('Email is required!');
+        }
+        const user = await this.repo.findOne({ where: { email } });
+        if (!user) {
+            throw new common_1.UnauthorizedException('Invalid email');
+        }
+        const otp = crypto.randomInt(100000, 999999).toString();
+        const salt = await bcrypt.genSalt();
+        user.otpHash = await bcrypt.hash(otp, salt);
+        user.otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
+        await this.sendOtpEmail(user.email, otp);
+        return {
+            message: 'Otp has been sent to your Email!',
+            step2Required: true,
+        };
+    }
+    async verifyOtpAndPassword(updatePasswordDto) {
+        const verifiedUser = await this.verifyAdminOtp(updatePasswordDto.email, updatePasswordDto.otp);
+        if (verifiedUser) {
+            return this.updateAdminPassword(updatePasswordDto);
+        }
+    }
+    async updateAdminPassword(updatePasswordDto) {
+        const { email, password, otp } = updatePasswordDto;
+        const randomString = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, randomString);
+        await this.repo.update({ email: email }, { passwordHash: hashedPassword });
+        return { success: true, message: 'admin password updated successfully!,login with new password' };
+    }
     findOne(id) {
         return `the user is`;
     }
