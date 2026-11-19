@@ -11,10 +11,11 @@ if (process.env.NODE_ENV !== 'production') {
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule, { rawBody: true });
     const allowedOrigins = [
-        'http://localhost:4200',
-        'http://localhost:50737',
+        ...(process.env.NODE_ENV !== 'production'
+            ? ['http://localhost:4200', 'http://localhost:50737']
+            : []),
         ...(process.env.FRONTEND_URL
-            ? process.env.FRONTEND_URL.split(',').map((url) => url.trim())
+            ? process.env.FRONTEND_URL.split(',').map((url) => url.trim()).filter(Boolean)
             : []),
     ];
     app.enableCors({

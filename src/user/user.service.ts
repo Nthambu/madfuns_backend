@@ -107,7 +107,7 @@ export class UserService {
 
     const payload = { sub: user.id, email: user.email, role: user.role };
     return {
-      accessToken: this.jwtService.sign(payload, { expiresIn: '1h' }),
+      accessToken: this.jwtService.sign(payload, { expiresIn: '7h' }),
     };
   }
 async verifyAdminEmail(email: string):Promise<{ message: string; step2Required: boolean }> {

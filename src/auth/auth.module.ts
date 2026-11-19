@@ -11,7 +11,7 @@ import { JwtAuthGuard }   from './jwt-auth.guard';
     PassportModule,
     JwtModule.register({
       secret:      process.env.JWT_SECRET ?? 'fallback-secret-change-me',
-      signOptions: { expiresIn: '7d' },
+      signOptions: { expiresIn: '7h' },
     }),
   ],
   controllers: [AuthController],

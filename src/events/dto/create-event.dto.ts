@@ -48,6 +48,14 @@ export class CreateEventDto {
   @IsDateString()
   event_date: string;
 
+   @ApiProperty({ example: 'nairobi' })
+  @IsString()
+  location: string;
+
+   @ApiProperty({ example: 'nairobi' })
+  @IsString()
+  host: string;
+
   @ApiProperty({ type: [TicketTypeDto] })
   @IsArray() @ValidateNested({ each: true }) @Type(() => TicketTypeDto)
   ticket_types: TicketTypeDto[];
@@ -59,4 +67,8 @@ export class CreateEventDto {
   @ApiPropertyOptional()
   @IsOptional() @IsUrl()
   image_url?: string;
+
+    @ApiPropertyOptional()
+  @IsOptional() @IsUrl()
+ shareurl?: string;
 }
