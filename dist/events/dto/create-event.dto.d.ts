@@ -11,7 +11,10 @@ export declare class CreateEventDto {
     city?: string;
     state?: string;
     event_date: string;
+    location: string;
+    host: string;
     ticket_types: TicketTypeDto[];
     facebook_url?: string;
     image_url?: string;
+    shareurl?: string;
 }

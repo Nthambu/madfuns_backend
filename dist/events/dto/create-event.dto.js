@@ -83,6 +83,16 @@ __decorate([
     __metadata("design:type", String)
 ], CreateEventDto.prototype, "event_date", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({ example: 'nairobi' }),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateEventDto.prototype, "location", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ example: 'nairobi' }),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateEventDto.prototype, "host", void 0);
+__decorate([
     (0, swagger_1.ApiProperty)({ type: [TicketTypeDto] }),
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.ValidateNested)({ each: true }),
@@ -101,4 +111,10 @@ __decorate([
     (0, class_validator_1.IsUrl)(),
     __metadata("design:type", String)
 ], CreateEventDto.prototype, "image_url", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUrl)(),
+    __metadata("design:type", String)
+], CreateEventDto.prototype, "shareurl", void 0);
 //# sourceMappingURL=create-event.dto.js.map
