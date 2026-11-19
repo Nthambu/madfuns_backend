@@ -11,13 +11,14 @@ if (process.env.NODE_ENV !== 'production') {
 async function bootstrap() {
   // rawBody: true — required so the webhook controller can verify Paystack HMAC signature
   const app = await NestFactory.create(AppModule, { rawBody: true });
- const allowedOrigins = [
-    'http://localhost:4200',
-    'http://localhost:50737',
-    ...(process.env.FRONTEND_URL
-      ? process.env.FRONTEND_URL.split(',').map((url) => url.trim())
-      : []),
-  ];
+const allowedOrigins = [
+  ...(process.env.NODE_ENV !== 'production'
+    ? ['http://localhost:4200', 'http://localhost:50737']
+    : []),
+  ...(process.env.FRONTEND_URL
+    ? process.env.FRONTEND_URL.split(',').map((url) => url.trim()).filter(Boolean)
+    : []),
+];
     app.enableCors({
     origin: allowedOrigins,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
