@@ -13,7 +13,7 @@ export class EventsService {
   ) {}
 
   findAll(): Promise<Event[]> {
-    return this.repo.find({ where: { active: true }, order: { event_date: 'ASC' } });
+    return this.repo.find({ where: { active: true }, order: { event_date: 'DESC' } });
   }
 
   findAllAdmin(): Promise<Event[]> {
