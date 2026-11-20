@@ -60,13 +60,19 @@ let CheckoutService = CheckoutService_1 = class CheckoutService {
         const total = parseFloat((subtotal + totalFee).toFixed(2));
         const amountInMinorUnits = Math.round(total * 100);
         const reference = generateReference();
+        if (process.env.NODE_ENV === 'development') {
+            var frontendUrl = `http://localhost:4200`;
+        }
+        else {
+            frontendUrl = `https://madfuns-com.onrender.com`;
+        }
         try {
             const { data } = await this.http.post('/transaction/initialize', {
                 email: dto.customerEmail,
                 amount: amountInMinorUnits,
                 reference,
                 currency: this.currency,
-                callback_url: `${process.env.FRONTEND_URL}/success?ref=${reference}`,
+                callback_url: `${frontendUrl}/success?ref=${reference}`,
                 metadata: {
                     custom_fields: [
                         { display_name: 'Customer Name', variable_name: 'customerName', value: dto.customerName },
