@@ -94,7 +94,7 @@ export class CheckoutService {
       if (process.env.NODE_ENV === 'development') {
       var frontendUrl = `http://localhost:4200`;
       }else {
-           frontendUrl = `https://madfuns-com.onrender.com`;
+           frontendUrl = `https://madfuns.co.ke/`;
       }
     // Call Paystack initialize endpoint
     try {
