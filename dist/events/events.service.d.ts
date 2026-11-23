@@ -1,10 +1,11 @@
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Event } from './event.entity';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 export declare class EventsService {
     private readonly repo;
-    constructor(repo: Repository<Event>);
+    private readonly dataSource;
+    constructor(repo: Repository<Event>, dataSource: DataSource);
     findAll(): Promise<Event[]>;
     findAllAdmin(): Promise<Event[]>;
     findOne(id: string): Promise<Event>;
@@ -13,4 +14,5 @@ export declare class EventsService {
     remove(id: string): Promise<{
         message: string;
     }>;
+    decrementTicketInArray(eventId: string, ticketName: string, purchasedQty: number): Promise<Event>;
 }

@@ -157,19 +157,18 @@ export class CheckoutService {
     // Idempotency — never create duplicate orders for the same reference
     const existing = await this.ordersService.findByReference(dto.reference);
     if (existing) {
-      this.logger.log(`Order already exists for ref=${dto.reference}`);
+      this.logger.log(`Order already exists for ref=${dto.reference} — webhook-first scenario, sending confirmation email`);
 
-      // If order was created in the last 2 minutes, the webhook likely beat the frontend
-      // verify call — send the confirmation email now since the webhook path skips it
-      const ageMs = Date.now() - new Date(existing.created_at).getTime();
-      if (ageMs < 2 * 60 * 1000) {
-        const orderWithEvent = await this.ordersService.findOne(existing.id);
-        try {
-          await this.mailService.sendOrderConfirmation(orderWithEvent);
-          this.logger.log(`Confirmation email dispatched for ${existing.order_number} (webhook-first scenario)`);
-        } catch (err) {
-          this.logger.error(`Confirmation email FAILED for ${existing.order_number}: ${err.message}`, err.stack);
-        }
+      // The webhook created the order before the frontend verify call arrived.
+      // Always send the confirmation email here — each reference is unique so
+      // this path runs exactly once per purchase regardless of how many prior
+      // orders the customer has placed.
+      const orderWithEvent = await this.ordersService.findOne(existing.id);
+      try {
+        await this.mailService.sendOrderConfirmation(orderWithEvent);
+        this.logger.log(`Confirmation email dispatched for ${existing.order_number} (webhook-first scenario)`);
+      } catch (err) {
+        this.logger.error(`Confirmation email FAILED for ${existing.order_number}: ${err.message}`, err.stack);
       }
 
       return { orderId: existing.id, orderNumber: existing.order_number, alreadyProcessed: true };
@@ -227,7 +226,7 @@ if (txn.status !== 'success') {
       currency:           txn.currency,
       status:             'paid',
     });
-
+await this.eventsService.decrementTicketInArray(meta.eventId,meta.ticketTypeName,meta.quantity)
     this.logger.log(
       `Order saved: ${order.order_number} | ref=${dto.reference} | ${totalPaid} ${txn.currency}`,
     );

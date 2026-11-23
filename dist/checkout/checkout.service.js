@@ -64,7 +64,7 @@ let CheckoutService = CheckoutService_1 = class CheckoutService {
             var frontendUrl = `http://localhost:4200`;
         }
         else {
-            frontendUrl = `https://madfuns-com.onrender.com`;
+            frontendUrl = `https://madfuns.co.ke/`;
         }
         try {
             const { data } = await this.http.post('/transaction/initialize', {
@@ -115,17 +115,14 @@ let CheckoutService = CheckoutService_1 = class CheckoutService {
         this.logger.log('', 'verifyAndSave was called');
         const existing = await this.ordersService.findByReference(dto.reference);
         if (existing) {
-            this.logger.log(`Order already exists for ref=${dto.reference}`);
-            const ageMs = Date.now() - new Date(existing.created_at).getTime();
-            if (ageMs < 2 * 60 * 1000) {
-                const orderWithEvent = await this.ordersService.findOne(existing.id);
-                try {
-                    await this.mailService.sendOrderConfirmation(orderWithEvent);
-                    this.logger.log(`Confirmation email dispatched for ${existing.order_number} (webhook-first scenario)`);
-                }
-                catch (err) {
-                    this.logger.error(`Confirmation email FAILED for ${existing.order_number}: ${err.message}`, err.stack);
-                }
+            this.logger.log(`Order already exists for ref=${dto.reference} — webhook-first scenario, sending confirmation email`);
+            const orderWithEvent = await this.ordersService.findOne(existing.id);
+            try {
+                await this.mailService.sendOrderConfirmation(orderWithEvent);
+                this.logger.log(`Confirmation email dispatched for ${existing.order_number} (webhook-first scenario)`);
+            }
+            catch (err) {
+                this.logger.error(`Confirmation email FAILED for ${existing.order_number}: ${err.message}`, err.stack);
             }
             return { orderId: existing.id, orderNumber: existing.order_number, alreadyProcessed: true };
         }
@@ -163,6 +160,7 @@ let CheckoutService = CheckoutService_1 = class CheckoutService {
             currency: txn.currency,
             status: 'paid',
         });
+        await this.eventsService.decrementTicketInArray(meta.eventId, meta.ticketTypeName, meta.quantity);
         this.logger.log(`Order saved: ${order.order_number} | ref=${dto.reference} | ${totalPaid} ${txn.currency}`);
         const orderWithEvent = await this.ordersService.findOne(order.id);
         try {
