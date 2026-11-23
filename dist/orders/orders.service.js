@@ -64,6 +64,9 @@ let OrdersService = class OrdersService {
     create(data) {
         return this.repo.save(this.repo.create(data));
     }
+    async markEmailSent(id) {
+        await this.repo.update(id, { email_sent: true });
+    }
 };
 exports.OrdersService = OrdersService;
 exports.OrdersService = OrdersService = __decorate([

@@ -15,4 +15,5 @@ export declare class OrdersService {
         tickets_sold: number;
     }>;
     create(data: Partial<Order>): Promise<Order>;
+    markEmailSent(id: string): Promise<void>;
 }

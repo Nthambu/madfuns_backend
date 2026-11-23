@@ -67,6 +67,9 @@ export class Order {
   @Column({ length: 50, default: 'pending' })
   status: OrderStatus;
 
+  @Column({ default: false })
+  email_sent: boolean;
+
   @CreateDateColumn()
   created_at: Date;
 }
