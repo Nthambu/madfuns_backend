@@ -18,8 +18,9 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const event_entity_1 = require("./event.entity");
 let EventsService = class EventsService {
-    constructor(repo) {
+    constructor(repo, dataSource) {
         this.repo = repo;
+        this.dataSource = dataSource;
     }
     findAll() {
         return this.repo.find({ where: { active: true }, order: { event_date: 'DESC' } });
@@ -47,11 +48,32 @@ let EventsService = class EventsService {
         await this.repo.save(event);
         return { message: `Event "${event.name}" deactivated` };
     }
+    async decrementTicketInArray(eventId, ticketName, purchasedQty) {
+        return this.dataSource.transaction(async (manager) => {
+            const event = await manager.findOne(event_entity_1.Event, {
+                where: { id: eventId },
+                lock: { mode: 'pessimistic_write' },
+            });
+            if (!event) {
+                throw new common_1.NotFoundException('Event not found');
+            }
+            const ticket = event.ticket_types.find((t) => t.name === ticketName);
+            if (!ticket) {
+                throw new common_1.NotFoundException(`Ticket type "${ticketName}" not found`);
+            }
+            if (ticket.available < purchasedQty) {
+                throw new common_1.BadRequestException('Not enough tickets remaining');
+            }
+            ticket.available -= purchasedQty;
+            return manager.save(event);
+        });
+    }
 };
 exports.EventsService = EventsService;
 exports.EventsService = EventsService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(event_entity_1.Event)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.DataSource])
 ], EventsService);
 //# sourceMappingURL=events.service.js.map
