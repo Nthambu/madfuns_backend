@@ -24,5 +24,6 @@ export declare class Order {
     payment_method: string;
     currency: string;
     status: OrderStatus;
+    email_sent: boolean;
     created_at: Date;
 }

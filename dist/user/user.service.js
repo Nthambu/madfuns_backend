@@ -107,6 +107,7 @@ let UserService = class UserService {
         const salt = await bcrypt.genSalt();
         user.otpHash = await bcrypt.hash(otp, salt);
         user.otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
+        await this.repo.save(user);
         await this.sendOtpEmail(user.email, otp);
         return {
             message: 'Otp has been sent to your Email!',

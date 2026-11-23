@@ -110,19 +110,20 @@ export class UserService {
       accessToken: this.jwtService.sign(payload, { expiresIn: '7h' }),
     };
   }
-async verifyAdminEmail(email: string):Promise<{ message: string; step2Required: boolean }> {
-  if (!email) {
+  async verifyAdminEmail(email: string): Promise<{ message: string; step2Required: boolean }> {
+    if (!email) {
       throw new BadRequestException('Email is required!');
     }
     const user = await this.repo.findOne({ where: { email } });
     if (!user) {
       throw new UnauthorizedException('Invalid email');
     }
-  
-       const otp = crypto.randomInt(100000, 999999).toString();
+
+    const otp = crypto.randomInt(100000, 999999).toString();
     const salt = await bcrypt.genSalt();
     user.otpHash = await bcrypt.hash(otp, salt);
     user.otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+    await this.repo.save(user);
 
     await this.sendOtpEmail(user.email, otp);
 
@@ -130,8 +131,7 @@ async verifyAdminEmail(email: string):Promise<{ message: string; step2Required: 
       message: 'Otp has been sent to your Email!',
       step2Required: true,
     };
-    
-}
+  }
   async verifyOtpAndPassword(updatePasswordDto: UpdatePasswordDto):Promise<{success:boolean,message:string}> {
   const verifiedUser= await this.verifyAdminOtp(updatePasswordDto.email, updatePasswordDto.otp);
   if(verifiedUser){

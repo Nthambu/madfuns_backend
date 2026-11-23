@@ -115,14 +115,20 @@ let CheckoutService = CheckoutService_1 = class CheckoutService {
         this.logger.log('', 'verifyAndSave was called');
         const existing = await this.ordersService.findByReference(dto.reference);
         if (existing) {
-            this.logger.log(`Order already exists for ref=${dto.reference} — webhook-first scenario, sending confirmation email`);
-            const orderWithEvent = await this.ordersService.findOne(existing.id);
-            try {
-                await this.mailService.sendOrderConfirmation(orderWithEvent);
-                this.logger.log(`Confirmation email dispatched for ${existing.order_number} (webhook-first scenario)`);
+            this.logger.log(`Order already exists for ref=${dto.reference}`);
+            if (!existing.email_sent) {
+                const orderWithEvent = await this.ordersService.findOne(existing.id);
+                try {
+                    await this.mailService.sendOrderConfirmation(orderWithEvent);
+                    await this.ordersService.markEmailSent(existing.id);
+                    this.logger.log(`Confirmation email dispatched for ${existing.order_number} (webhook-first scenario)`);
+                }
+                catch (err) {
+                    this.logger.error(`Confirmation email FAILED for ${existing.order_number}: ${err.message}`, err.stack);
+                }
             }
-            catch (err) {
-                this.logger.error(`Confirmation email FAILED for ${existing.order_number}: ${err.message}`, err.stack);
+            else {
+                this.logger.log(`Confirmation email already sent for ${existing.order_number} — skipping duplicate`);
             }
             return { orderId: existing.id, orderNumber: existing.order_number, alreadyProcessed: true };
         }
@@ -165,6 +171,7 @@ let CheckoutService = CheckoutService_1 = class CheckoutService {
         const orderWithEvent = await this.ordersService.findOne(order.id);
         try {
             await this.mailService.sendOrderConfirmation(orderWithEvent);
+            await this.ordersService.markEmailSent(order.id);
             this.logger.log(`Confirmation email dispatched for ${order.order_number}`);
         }
         catch (err) {

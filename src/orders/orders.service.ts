@@ -60,4 +60,8 @@ export class OrdersService {
   create(data: Partial<Order>): Promise<Order> {
     return this.repo.save(this.repo.create(data));
   }
+
+  async markEmailSent(id: string): Promise<void> {
+    await this.repo.update(id, { email_sent: true });
+  }
 }
