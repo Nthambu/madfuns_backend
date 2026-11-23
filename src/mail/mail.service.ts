@@ -1,46 +1,35 @@
 import { Injectable, Logger } from '@nestjs/common';
-import * as nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import * as QRCode from 'qrcode';
 import { Order } from '../orders/order.entity';
 
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
-  private transporter: nodemailer.Transporter;
+  private readonly resend: Resend;
+  private readonly from: string;
 
   constructor() {
-    this.transporter = nodemailer.createTransport({
-      host: process.env.MAIL_HOST ?? 'smtp.gmail.com',
-      port: parseInt(process.env.MAIL_PORT ?? '587'),
-      secure: process.env.MAIL_SECURE === 'true',
-      auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS,
-      },
-    });
-
-    // Verify SMTP connection at startup so misconfiguration is caught early
-    if (process.env.MAIL_USER) {
-      this.transporter.verify()
-        .then(() => this.logger.log('SMTP connection verified — mail is ready'))
-        .catch(err => this.logger.error(`SMTP connection FAILED: ${err.message}`));
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      this.logger.warn('RESEND_API_KEY not set — emails will not be sent');
     }
+    this.resend = new Resend(apiKey ?? '');
+    this.from = process.env.MAIL_FROM ?? 'tickets@madfuns.co.ke';
+    this.logger.log(`MailService ready — from: ${this.from}`);
   }
 
   // ── OTP email for admin login ──────────────────────────────────────────
 
   async sendOtpEmail(to: string, otp: string): Promise<void> {
-    if (!process.env.MAIL_USER) {
-      // this.logger.warn('MAIL_USER not set — skipping OTP email');
-      return;
-    }
+    if (!process.env.RESEND_API_KEY) return;
 
     try {
-      await this.transporter.sendMail({
-        from: process.env.MAIL_FROM ?? process.env.MAIL_USER,
+      const { error } = await this.resend.emails.send({
+        from:    this.from,
         to,
         subject: 'Your admin login OTP',
-        text: `Your one-time login code is: ${otp}\n\nThis code expires in 5 minutes. Do not share it with anyone.`,
+        text:    `Your one-time login code is: ${otp}\n\nThis code expires in 5 minutes. Do not share it with anyone.`,
         html: `
           <div style="font-family:Arial,sans-serif;max-width:400px;margin:0 auto;padding:32px;background:#f9f9f9;border-radius:8px;">
             <h2 style="color:#1a56db;margin-top:0;">Admin Login Code</h2>
@@ -52,42 +41,45 @@ export class MailService {
           </div>
         `,
       });
-      // this.logger.log(`OTP email sent to ${to}`);
+
+      if (error) {
+        this.logger.error(`Resend rejected OTP email to ${to}: ${JSON.stringify(error)}`);
+        throw new Error(error.message);
+      }
     } catch (err) {
-      // this.logger.error(`Failed to send OTP email to ${to}: ${err.message}`);
-      throw err; // re-throw so the login flow knows it failed
+      this.logger.error(`Failed to send OTP email to ${to}: ${err.message}`);
+      throw err;
     }
   }
 
-  // ── Public method called by CheckoutService ────────────────────────────
+  // ── Order confirmation email ───────────────────────────────────────────
 
   async sendOrderConfirmation(order: Order): Promise<void> {
-    if (!process.env.MAIL_USER) {
-      this.logger.warn('MAIL_USER not set — skipping confirmation email');
+    if (!process.env.RESEND_API_KEY) {
+      this.logger.warn('RESEND_API_KEY not set — skipping confirmation email');
       return;
     }
 
     const subject = `Your tickets for ${order.event?.name ?? 'the event'} — ${order.order_number}`;
-this.logger.log('','email function called');
-    // Generate QR code as base64 data URL — encodes the order number
-    const qrDataUrl = await QRCode.toDataURL(order.order_number, {
-      width: 160,
-      margin: 1,
-      color: { dark: '#1a56db', light: '#f0f4ff' },
-    });
+    this.logger.log(`Sending confirmation email to ${order.customer_email} — ${order.order_number}`);
 
     try {
-      await this.transporter.sendMail({
-        from:    process.env.MAIL_FROM ?? process.env.MAIL_USER,
+      const { data, error } = await this.resend.emails.send({
+        from:    this.from,
         to:      order.customer_email,
         subject,
         html:    this.buildTicketHtml(order),
-        // html:    this.buildTicketHtml(order, qrDataUrl),
         text:    this.buildTicketText(order),
       });
-       this.logger.log(`Confirmation email sent to ${order.customer_email} — ${order.order_number}`);
+
+      if (error) {
+        this.logger.error(`Resend rejected email for ${order.order_number}: ${JSON.stringify(error)}`);
+        throw new Error(error.message);
+      }
+
+      this.logger.log(`Confirmation email sent — id: ${data?.id} order: ${order.order_number}`);
     } catch (err) {
-       this.logger.error(`Failed to send email to ${order.customer_email}: ${err.message}`);
+      this.logger.error(`Failed to send email to ${order.customer_email}: ${err.message}`);
       throw err;
     }
   }
@@ -197,16 +189,14 @@ this.logger.log('','email function called');
                 <td style="background:#f0f4ff;padding:20px 24px;">
                   <table width="100%" cellpadding="0" cellspacing="0">
                     <tr>
-                      <!-- Left: ticket details -->
                       <td style="vertical-align:top;padding-right:16px;">
                         <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#4b6cb7;margin-bottom:6px;">Your ticket</div>
                         <div style="font-size:16px;font-weight:700;color:#1a1a1a;">${eventName}</div>
                         <div style="font-size:13px;color:#555;margin-top:4px;">${order.ticket_type_name} · ${order.quantity} ticket${order.quantity > 1 ? 's' : ''}</div>
                         <div style="font-size:13px;color:#555;margin-top:2px;">${eventDate}</div>
                         <div style="margin-top:12px;font-family:monospace;font-size:13px;letter-spacing:3px;color:#1a56db;font-weight:700;">${order.order_number}</div>
-                        <div style="font-size:11px;color:#888;margin-top:4px;">Present this QR code at the venue</div>
+                        <div style="font-size:11px;color:#888;margin-top:4px;">Present this code at the venue</div>
                       </td>
-                     
                     </tr>
                   </table>
                 </td>
@@ -249,12 +239,7 @@ this.logger.log('','email function called');
 </body>
 </html>`;
   }
-  // Right: QR code 
-  //                     <td style="vertical-align:middle;text-align:center;width:120px;">
-  //                       <img src="${qrDataUrl}" width="120" height="120" alt="Ticket QR Code"
-  //                         style="display:block;border-radius:6px;border:2px solid #1a56db;" />
-  //                       <div style="font-size:10px;color:#888;margin-top:4px;">Scan at entry</div>
-  //                     </td>
+
   // ── Plain-text fallback ────────────────────────────────────────────────
 
   private buildTicketText(order: Order): string {
