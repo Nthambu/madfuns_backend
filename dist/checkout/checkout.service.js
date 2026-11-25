@@ -148,24 +148,36 @@ let CheckoutService = CheckoutService_1 = class CheckoutService {
         const totalPaid = txn.amount / 100;
         const feeTotal = parseFloat((this.serviceFee * Number(meta.quantity)).toFixed(2));
         const unitPrice = parseFloat(((totalPaid - feeTotal) / Number(meta.quantity)).toFixed(2));
-        const order = await this.ordersService.create({
-            order_number: generateOrderNumber(),
-            event_id: meta.eventId,
-            ticket_type_index: Number(meta.ticketTypeIndex),
-            ticket_type_name: meta.ticketTypeName,
-            quantity: Number(meta.quantity),
-            unit_price: unitPrice,
-            service_fee: feeTotal,
-            total_amount: totalPaid,
-            customer_email: txn.customer.email,
-            customer_name: meta.customerName,
-            customer_phone: meta.customerPhone || dto.customerPhone,
-            billing_address: dto.billingAddress,
-            payment_reference: dto.reference,
-            payment_method: txn.channel,
-            currency: txn.currency,
-            status: 'paid',
-        });
+        let order;
+        try {
+            order = await this.ordersService.create({
+                order_number: generateOrderNumber(),
+                event_id: meta.eventId,
+                ticket_type_index: Number(meta.ticketTypeIndex),
+                ticket_type_name: meta.ticketTypeName,
+                quantity: Number(meta.quantity),
+                unit_price: unitPrice,
+                service_fee: feeTotal,
+                total_amount: totalPaid,
+                customer_email: txn.customer.email,
+                customer_name: meta.customerName,
+                customer_phone: meta.customerPhone || dto.customerPhone,
+                billing_address: dto.billingAddress,
+                payment_reference: dto.reference,
+                payment_method: txn.channel,
+                currency: txn.currency,
+                status: 'paid',
+            });
+        }
+        catch (err) {
+            const isUniqueViolation = err?.code === '23505' || err?.message?.includes('unique constraint');
+            if (isUniqueViolation) {
+                this.logger.warn(`Duplicate insert blocked for ref=${dto.reference} — another process already created this order`);
+                const existing = await this.ordersService.findByReference(dto.reference);
+                return { orderId: existing.id, orderNumber: existing.order_number, alreadyProcessed: true };
+            }
+            throw err;
+        }
         await this.eventsService.decrementTicketInArray(meta.eventId, meta.ticketTypeName, meta.quantity);
         this.logger.log(`Order saved: ${order.order_number} | ref=${dto.reference} | ${totalPaid} ${txn.currency}`);
         const orderWithEvent = await this.ordersService.findOne(order.id);

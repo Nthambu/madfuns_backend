@@ -94,6 +94,7 @@ let MailService = MailService_1 = class MailService {
         const total = Number(order.total_amount).toFixed(2);
         const unitPrice = Number(order.unit_price).toFixed(2);
         const fee = Number(order.service_fee).toFixed(2);
+        const currency = 'Kes';
         return `
 <!DOCTYPE html>
 <html lang="en">
@@ -158,16 +159,16 @@ let MailService = MailService_1 = class MailService {
             <!-- Payment breakdown -->
             <table width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;">
               <tr>
-                <td style="padding:4px 0;color:#555;">Tickets (${order.quantity} × $${unitPrice})</td>
-                <td align="right" style="color:#333;">$${(Number(unitPrice) * order.quantity).toFixed(2)}</td>
+                <td style="padding:4px 0;color:#555;">Tickets (${order.quantity} × ${currency} ${unitPrice})</td>
+                <td align="right" style="color:#333;">${currency} ${(Number(unitPrice) * order.quantity).toFixed(2)}</td>
               </tr>
               <tr>
                 <td style="padding:4px 0;color:#555;">Service fee</td>
-                <td align="right" style="color:#333;">$${fee}</td>
+                <td align="right" style="color:#333;">${currency} ${fee}</td>
               </tr>
               <tr>
                 <td style="padding:12px 0 4px;font-weight:700;font-size:15px;color:#111;border-top:1px solid #eee;">Total charged</td>
-                <td align="right" style="padding-top:12px;font-weight:700;font-size:15px;color:#1a56db;border-top:1px solid #eee;">$${total}</td>
+                <td align="right" style="padding-top:12px;font-weight:700;font-size:15px;color:#1a56db;border-top:1px solid #eee;">${currency} ${total}</td>
               </tr>
             </table>
           </td>
@@ -236,6 +237,7 @@ let MailService = MailService_1 = class MailService {
         const event = order.event;
         const eventName = event?.name ?? 'Event';
         const total = Number(order.total_amount).toFixed(2);
+        const currency = order.currency ?? 'KES';
         return `
 YOU'RE GOING! — ${eventName}
 Order: ${order.order_number}
@@ -247,7 +249,7 @@ Venue: ${[event?.venue, event?.city, event?.state].filter(Boolean).join(', ') ||
 TICKETS
 Type:     ${order.ticket_type_name}
 Quantity: ${order.quantity}
-Total:    $${total}
+Total: ${currency} ${total}
 
 Present this email or your order number at the venue.
 Bring a valid photo ID.

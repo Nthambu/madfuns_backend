@@ -31,8 +31,8 @@ export declare class CheckoutService {
         orderNumber: string;
         alreadyProcessed: boolean;
     } | {
-        orderId: string;
-        orderNumber: string;
+        orderId: any;
+        orderNumber: any;
         alreadyProcessed?: undefined;
     }>;
     handleWebhook(rawBody: string, signature: string, payload: any): Promise<{
