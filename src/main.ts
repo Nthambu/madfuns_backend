@@ -13,7 +13,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
 const allowedOrigins = [
   ...(process.env.NODE_ENV !== 'production'
-    ? ['http://localhost:4200', 'http://localhost:50737']
+    ? ['http://localhost:4200', 'http://localhost:52263']
     : []),
   ...(process.env.FRONTEND_URL
     ? process.env.FRONTEND_URL.split(',').map((url) => url.trim()).filter(Boolean)

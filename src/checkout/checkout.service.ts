@@ -212,8 +212,12 @@ if (txn.status !== 'success') {
       ((totalPaid - feeTotal) / Number(meta.quantity)).toFixed(2),
     );
 
-    // Save the order
-    const order = await this.ordersService.create({
+    // Save the order — wrap in try/catch so a race-condition duplicate insert
+    // (unique violation on payment_reference) is handled gracefully instead of
+    // throwing a 500 and potentially skipping the confirmation email.
+    let order: any;
+    try {
+      order = await this.ordersService.create({
       order_number:       generateOrderNumber(),
       event_id:           meta.eventId,
       ticket_type_index:  Number(meta.ticketTypeIndex),
@@ -230,7 +234,17 @@ if (txn.status !== 'success') {
       payment_method:     txn.channel,     // 'card', 'mobile_money', 'ussd', 'bank'
       currency:           txn.currency,
       status:             'paid',
-    });
+      });
+    } catch (err) {
+      // Postgres unique violation code is '23505'
+      const isUniqueViolation = err?.code === '23505' || err?.message?.includes('unique constraint');
+      if (isUniqueViolation) {
+        this.logger.warn(`Duplicate insert blocked for ref=${dto.reference} — another process already created this order`);
+        const existing = await this.ordersService.findByReference(dto.reference);
+        return { orderId: existing!.id, orderNumber: existing!.order_number, alreadyProcessed: true };
+      }
+      throw err;
+    }
 await this.eventsService.decrementTicketInArray(meta.eventId,meta.ticketTypeName,meta.quantity)
     this.logger.log(
       `Order saved: ${order.order_number} | ref=${dto.reference} | ${totalPaid} ${txn.currency}`,

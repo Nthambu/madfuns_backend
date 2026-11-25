@@ -25,8 +25,8 @@ export declare class CheckoutController {
         orderNumber: string;
         alreadyProcessed: boolean;
     } | {
-        orderId: string;
-        orderNumber: string;
+        orderId: any;
+        orderNumber: any;
         alreadyProcessed?: undefined;
     }>;
     handleWebhook(req: RawBodyRequest<Request>, signature: string, payload: any): Promise<{
